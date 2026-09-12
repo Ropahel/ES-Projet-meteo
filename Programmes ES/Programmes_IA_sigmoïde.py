@@ -1,10 +1,11 @@
 from math import exp
-from random import randint,shuffle
+from random import randint, shuffle
 import csv
 import pyowm
-from datetime import datetime, timedelta
-import csv
+from datetime import datetime, timedelta, timezone
 import copy
+from typing import Any, cast
+from pathlib import Path
 
 def init_params(nb_couche, nb_neurones_couches, nb_neurones_out):
     L = [[[randint(-5, 5)*0.05619874958473269784, randint(-5, 5)*0.3985674078923] for _ in range(nb_couche)] for _ in range(nb_neurones_couches)]
@@ -47,8 +48,8 @@ def accuracy(result, attendu):
 
 def forward_prop(L, L_out, pression, temp, humidite, direc_vent, vitesse_vent, nuage, pluie, visibilitee, heure, minute,
                  jour, mois):
-    L_result_out = [[0, 0] for _ in range(len(L_out))]
-    L_result = [[0 for _ in range(len(L[0]))] for _ in range(len(L))]
+    L_result_out = [0.0 for _ in range(len(L_out))]
+    L_result = [[0.0 for _ in range(len(L[0]))] for _ in range(len(L))]
     
     pression = float(pression)
     temp = float(temp)
@@ -113,8 +114,8 @@ def descente(L, L_out, L_result, L_verif, learning_rate):
         if L_verif[i] == 0:
             L_verif[i] = 0.1
     for j in range(len(L_result)):
-        if L_result[i] == 0:
-            L_result[i] == 0.1
+        if L_result[j] == 0:
+            L_result[j] = 0.1
             
     gradient_poids_cachees = [[0 for _ in range(len(L[0]))] for _ in range(len(L))]
     gradient_biais_cachees = [[0 for _ in range(len(L[0]))] for _ in range(len(L))]
@@ -340,11 +341,11 @@ def verif_prediction_8(L,L_out,api_key,city_name,delta):
     
     donnees_meteo = weather_data_to_jeu_donnees_pour_1_jeu(weather_data)
     print(donnees_meteo[0][0])
-    print(datetime.utcnow()-timedelta(hours=delta)+timedelta(hours=2))
+    print(datetime.now(timezone.utc)-timedelta(hours=delta)+timedelta(hours=2))
     print()
     
     for jeu in donnees_meteo:
-        jeu[0][9] == 0.01
+        jeu[0][9] = 0.01
         for sous_jeu in jeu:
             sous_jeu[1] = round(float(sous_jeu[1]),1)
             sous_jeu[5] = float(sous_jeu[5])/100
@@ -359,7 +360,7 @@ def verif_prediction_8(L,L_out,api_key,city_name,delta):
             elif valu <= 157.5:
                 sous_jeu[3] = 3
             elif valu <= 205.5:
-                sous_jeu = 4
+                sous_jeu[3] = 4
             elif valu <= 247.5:
                 sous_jeu[3] = 5
             elif valu <= 292.5:
@@ -392,7 +393,7 @@ def verif_prediction_8_V(L,L_out,api_key,city_name,delta):
     
     donnees_meteo = weather_data_to_jeu_donnees_pour_1_jeu(weather_data)
     for jeu in donnees_meteo:
-        jeu[0][9] == 0.01
+        jeu[0][9] = 0.01
         for sous_jeu in jeu:
             sous_jeu[1] = round(float(sous_jeu[1]),1)
             sous_jeu[5] = float(sous_jeu[5])/100
@@ -407,7 +408,7 @@ def verif_prediction_8_V(L,L_out,api_key,city_name,delta):
             elif valu <= 157.5:
                 sous_jeu[3] = 3
             elif valu <= 205.5:
-                sous_jeu = 4
+                sous_jeu[3] = 4
             elif valu <= 247.5:
                 sous_jeu[3] = 5
             elif valu <= 292.5:
@@ -495,7 +496,13 @@ def load_weather_data_from_csv(filename):
     L_jeu = []
     L_teste = []
     weather_data = []
-    with open(filename, 'r', newline='') as csvfile:
+
+    script_dir = Path(__file__).resolve().parent
+    file_path = Path(filename)
+    if not file_path.is_absolute():
+        file_path = script_dir / file_path
+
+    with open(file_path, 'r', newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             L_jeu = [row[i] for i in range(12)]
@@ -513,14 +520,14 @@ def get_weather_data_teste(api_key, city_name, delta):
 
     # Initialisation de l'objet OWM
     owm = pyowm.OWM(api_key)
-    mgr = owm.weather_manager()
+    mgr = cast(Any, owm.weather_manager())
 
     # Récupération de la date et heure actuelle
-    current_date = datetime.utcnow()
+    current_date = datetime.now(timezone.utc)
 
     # Récupération des données météorologiques pour l'heure actuelle
-    observation = mgr.weather_at_place(city_name)
-    current_weather = observation.weather
+    observation = cast(Any, mgr.weather_at_place(city_name))
+    current_weather = cast(Any, observation.weather)
 
     # Extraire les données météorologiques nécessaires pour l'heure actuelle
     current_weather_entry = {
@@ -539,19 +546,19 @@ def get_weather_data_teste(api_key, city_name, delta):
     }
 
     # Récupération des prévisions météorologiques pour l'heure spécifiée après l'heure actuelle
-    forecast = mgr.forecast_at_place(city_name, '3h')
-    next_hour_forecast = forecast.get_weather_at(current_date - timedelta(hours=delta))
+    forecast = cast(Any, mgr.forecast_at_place(city_name, '3h'))
+    next_hour_forecast = cast(Any, forecast.get_weather_at(current_date - timedelta(hours=delta)))
 
     # Extraire les données météorologiques nécessaires pour l'heure spécifiée après l'heure actuelle
     next_hour_weather = {
-        "pressure": next_hour_forecast.pressure['press'],
-        "temp": next_hour_forecast.temperature('celsius')['temp'],
-        "humidity": next_hour_forecast.humidity,
-        "wind_direction": next_hour_forecast.wind()['deg'],
-        "wind_speed": next_hour_forecast.wind()['speed'],
-        "clouds": next_hour_forecast.clouds,
-        "rain": next_hour_forecast.rain.get('1h', 0),
-        "visibility": next_hour_forecast.visibility_distance,
+        "pressure": cast(Any, next_hour_forecast.pressure)['press'],
+        "temp": cast(Any, next_hour_forecast.temperature('celsius'))['temp'],
+        "humidity": cast(Any, next_hour_forecast).humidity,
+        "wind_direction": cast(Any, next_hour_forecast.wind())['deg'],
+        "wind_speed": cast(Any, next_hour_forecast.wind())['speed'],
+        "clouds": cast(Any, next_hour_forecast).clouds,
+        "rain": cast(Any, next_hour_forecast.rain).get('1h', 0),
+        "visibility": cast(Any, next_hour_forecast).visibility_distance,
     }
     # Ajouter les prévisions pour l'heure spécifiée après l'heure actuelle à la liste
     weather_data.append([next_hour_weather,current_weather_entry])
@@ -561,42 +568,42 @@ def get_weather_data_teste(api_key, city_name, delta):
 def get_weather_data_delta(api_key, city,delta):
     # Initialize PyOWM with API key
     owm = pyowm.OWM(api_key)
-    mgr = owm.weather_manager()
+    mgr = cast(Any, owm.weather_manager())
     
     # Create a list to store weather data
     weather_data = []
     # Set the start date as the current date and time
-    current_date = datetime.utcnow()+timedelta(hours=2)
+    current_date = datetime.now(timezone.utc)+timedelta(hours=2)
     end_date = current_date + timedelta(hours=delta)
 
     # Iterate until reaching the end date
     while current_date < end_date:
         # Retrieve weather information for the current date
-        observation = mgr.weather_at_place(city)
-        current_weather = observation.weather
+        observation = cast(Any, mgr.weather_at_place(city))
+        current_weather = cast(Any, observation.weather)
 
         # Extract relevant information for the current date
         current_data = {
-            "pressure": current_weather.pressure['press'],
-            "temp": current_weather.temperature('celsius')['temp'],
-            "humidity": current_weather.humidity,
-            "wind_direction": current_weather.wind()['deg'],
-            "wind_speed": current_weather.wind()['speed'],
-            "clouds": current_weather.clouds,
-            "rain": current_weather.rain.get('1h', 0),
-            "visibility": current_weather.visibility_distance
+            "pressure": cast(Any, current_weather.pressure)['press'],
+            "temp": cast(Any, current_weather.temperature('celsius'))['temp'],
+            "humidity": cast(Any, current_weather).humidity,
+            "wind_direction": cast(Any, current_weather.wind())['deg'],
+            "wind_speed": cast(Any, current_weather.wind())['speed'],
+            "clouds": cast(Any, current_weather).clouds,
+            "rain": cast(Any, current_weather.rain).get('1h', 0),
+            "visibility": cast(Any, current_weather).visibility_distance
         }
 
         # Extract relevant information for the past hour
         past_hour_data = {
-            "pressure": current_weather.pressure['press'],
-            "temp": current_weather.temperature('celsius')['temp'],
-            "humidity": current_weather.humidity,
-            "wind_direction": current_weather.wind()['deg'],
-            "wind_speed": current_weather.wind()['speed'],
-            "clouds": current_weather.clouds,
-            "rain": current_weather.rain.get('1h', 0),
-            "visibility": current_weather.visibility_distance,
+            "pressure": cast(Any, current_weather.pressure)['press'],
+            "temp": cast(Any, current_weather.temperature('celsius'))['temp'],
+            "humidity": cast(Any, current_weather).humidity,
+            "wind_direction": cast(Any, current_weather.wind())['deg'],
+            "wind_speed": cast(Any, current_weather.wind())['speed'],
+            "clouds": cast(Any, current_weather).clouds,
+            "rain": cast(Any, current_weather.rain).get('1h', 0),
+            "visibility": cast(Any, current_weather).visibility_distance,
             "hour": current_date.hour,
             "minute": current_date.minute,
             "day": current_date.day,
@@ -973,7 +980,7 @@ L_donnees_3H_V = prep_V(jeu_donnees_jeu_loaded_3H)
 L_donnees_5H_V = prep_V(jeu_donnees_jeu_loaded_5H)
 L_donnees_24H_V = prep_V(jeu_donnees_jeu_loaded_24H)
 
-time_beg = datetime.utcnow()
+time_beg = datetime.now(timezone.utc)
 print("Time beg = ", time_beg)
 
 
@@ -995,7 +1002,7 @@ print()         #Pour l'apprentissage
     #Pour 24H, variation
 #aprend_8(L_8_24H_3C_V,L_out_8_24H_3C_V,jeu_teste_V_24H,L_donnees_24H_V,epochs,learning_rate)
 
-time_finish = datetime.utcnow()
+time_finish = datetime.now(timezone.utc)
 time = time_finish-time_beg
 
 print()         #Pour la durée de l'apprentissage 
