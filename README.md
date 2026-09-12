@@ -1,1 +1,12 @@
-Readme.md ?
+﻿# Forecasting the Weather with a From-Scratch Neural Network
+
+This project was created in April 2024, at the end of the French high school year known as Première, during the 2023–2024 school year, as a scientific teaching project inspired by a single question: could the weather be predicted?
+
+The beginning of the project was based on a more manual and traditional approach to meteorology. At that time, the project was still an ordinary scientific school experience. But during the holidays, the idea became much more personal and ambitious. I decided to use the opportunity to build my own artificial intelligence from scratch and to turn the project into a true experiment on supervised learning. I spent two full weeks on the program, and I put an enormous amount of work into it. I wrote the code, built the data workflow, designed the model, and tried to make the whole work consistent enough to feel like a real scientific investigation.
+
+The final result is a custom multi-layer perceptron, built without NumPy and without matrix libraries, because at that time I did not yet know matrix multiplication or modern numerical tools. The model uses a sigmoid activation function and a hand-written structure that reflects a very educational and personal implementation. I did not really know the exact formal framework of supervised learning at that stage, but I understood the general idea of a simple neural network and how it could be trained from examples. The difficult part was backpropagation, which I had not yet succeeded in implementing by hand, so I asked an AI to help me write that part of the logic.
+
+The repository gathers the full project documentation and materials: the data files, the code files, the report, the presentation documents, and the visual supporting material. Its purpose is not only to show a machine learning model, but also to preserve a scientific work that tried to turn a simple question into a genuine article-like structure: a question, a method, data, a model, and a discussion of the results and limitations. I also put a lot of effort into the written document, because I wanted it to look like a real scientific report rather than a simple classroom exercise.
+
+Among the files, only one program is truly functional and usable in practice: Programmes_IA_sigmoïde.py. This is the file that was revised and updated after the end of the project, and it is the one that can actually be executed as the main implementation of the neural network workflow. Other files in the repository are mostly documentation and supporting project materials, and they were not maintained as working code.
+
